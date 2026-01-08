@@ -5,6 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.linalg import solve, det
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from enum import Enum
+
+class spaceEnum(Enum):
+    SPACE_LIMITS = 0
+    OBJECTS = 1
+
+class planeEnum(Enum):
+    CYCLE = 0
+    PLANE = 1
 
 
 class Shape3D(nx.Graph):
@@ -13,6 +22,21 @@ class Shape3D(nx.Graph):
         self.add_nodes_from(nodes)
         self.add_edges_from(edges)
         self.sides = self.init_sides()
+        edges_with_lines = self.init_edges()
+        self.remove_edges_from(edges)
+        self.add_edges_from(edges_with_lines)
+
+    def init_edges(self):
+        edges_with_lines = []
+        for edge in self.edges:
+            planes = []
+            for cycle, plane in self.sides:
+                if edge[0] in cycle and edge[1] in cycle:
+                    planes.append(plane)
+            line = planes
+            edges_with_lines.append((edge[0], edge[1], {"line_eq": line}))
+
+        return edges_with_lines
 
     def init_sides(self):
         simple_cycles = sorted(nx.simple_cycles(self))
@@ -28,9 +52,9 @@ class Shape3D(nx.Graph):
                 b_vector = np.array([[-v1[0]],
                                      [-v2[0]]])
                 params = solve(A_matrix, b_vector)
-                A = 1
-                B = params[0]
-                C = params[1]
+                A = 1.0
+                B = float(params[0, 0])
+                C = float(params[1, 0])
             else:
                 A_matrix = np.array([[v1[0], v1[2]],
                                      [v2[0], v2[2]]])
@@ -38,28 +62,30 @@ class Shape3D(nx.Graph):
                     b_vector = np.array([[-v1[1]],
                                          [-v2[1]]])
                     params = solve(A_matrix, b_vector)
-                    A = params[0]
-                    B = 1
-                    C = params[1]
+                    A = float(params[0, 0])
+                    B = 1.0
+                    C = float(params[1, 0])
                 else:
                     A_matrix = np.array([[v1[0], v1[1]],
                                          [v2[0], v2[1]]])
                     b_vector = np.array([[-v1[2]],
                                          [-v2[2]]])
                     params = solve(A_matrix, b_vector)
-                    A = params[0]
-                    B = params[1]
-                    C = 1
+                    A = float(params[0, 0])
+                    B = float(params[1, 0])
+                    C = 1.0
             D = -A * intersect[0] - B * intersect[1] - C * intersect[2]
 
-            def plane(point):
-                return A * point[0] + B * point[1] + C * point[2] + D
-
+            plane = {"A": A,
+                     "B": B,
+                     "C": C,
+                     "D": D}
             for node in cycle:
-                if plane(self.nodes[node]["pos"]) != 0:
+                point = self.nodes[node]["pos"]
+                if A * point[0] + B * point[1] + C * point[2] + D != 0:
                     break
             else:
-                shortest_simple_cycles.append(cycle)
+                shortest_simple_cycles.append((cycle, plane))
         return shortest_simple_cycles
 
     def plot3Dshape(self, fig=None, ax=None):
@@ -68,7 +94,7 @@ class Shape3D(nx.Graph):
         if ax is None:
             ax = fig.add_subplot(projection='3d')
         verts = []
-        for side in self.sides:
+        for side, plane_eq in self.sides:
             verts_i = [self.nodes[side[i]]["pos"] for i in range(len(side))]
             verts.append(verts_i)
         poly = Poly3DCollection(
@@ -81,6 +107,7 @@ class Shape3D(nx.Graph):
         ax.set_aspect('equal', adjustable='box')
         plt.show()
         return fig, ax
+
 
 class Block(Shape3D):
     def __init__(self, center, length, width, height):
