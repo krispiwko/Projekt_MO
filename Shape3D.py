@@ -78,5 +78,42 @@ class Shape3D(nx.Graph):
             alpha=0.4
         )
         ax.add_collection3d(poly)
+        ax.set_aspect('equal', adjustable='box')
         plt.show()
         return fig, ax
+
+class Block(Shape3D):
+    def __init__(self, center, length, width, height):
+        n0_pos = [center[0] - length/2, center[1] - width/2, center[2] - height/2]
+        n1_pos = list(n0_pos)
+        n1_pos[0] += length
+        n2_pos = list(n0_pos)
+        n2_pos[1] += width
+        n3_pos = list(n0_pos)
+        n3_pos[2] += height
+        n4_pos = list(n1_pos)
+        n4_pos[1] += width
+        n5_pos = list(n1_pos)
+        n5_pos[2] += height
+        n6_pos = list(n2_pos)
+        n6_pos[2] += height
+        n7_pos = list(n4_pos)
+        n7_pos[2] += height
+        node_pos = [n0_pos, n1_pos, n2_pos, n3_pos,
+                    n4_pos, n5_pos, n6_pos, n7_pos]
+        nodes = []
+        for i in range(8):
+            nodes.append((i, {"pos": node_pos[i]}))
+        edges = [(0, 1),
+                 (0, 2),
+                 (0, 3),
+                 (1, 4),
+                 (1, 5),
+                 (2, 4),
+                 (2, 6),
+                 (3, 5),
+                 (3, 6),
+                 (4, 7),
+                 (5, 7),
+                 (6, 7)]
+        super().__init__(nodes, edges)
