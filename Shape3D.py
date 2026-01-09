@@ -101,11 +101,10 @@ class Shape3D(nx.Graph):
             verts,
             facecolor="cyan",
             edgecolor="k",
-            alpha=0.4
+            alpha=0.1
         )
         ax.add_collection3d(poly)
         ax.set_aspect('equal', adjustable='box')
-        plt.show()
         return fig, ax
 
 
