@@ -7,8 +7,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def find_vertex_route(space, starting_point, ending_point):
+    space_block = space[spaceEnum.SPACE_LIMITS]
     starting_point = np.array(starting_point)
     ending_point = np.array(ending_point)
+    if not space_block.if_in(starting_point) or not space_block.if_in(ending_point):
+        print("Punkt startowy lub końcowy poza obszarem dopuszczalnym")
+        return None
     u = ending_point - starting_point
     u = u / np.linalg.norm(u)
     x0 = starting_point
@@ -54,7 +58,7 @@ def find_vertex_route(space, starting_point, ending_point):
                 P2 = np.array(block_object.nodes[edge[1]]["pos"])
                 limits_down = np.min(np.array([P1, P2]), axis=0)
                 limits_up = np.max(np.array([P1, P2]), axis=0)
-                if (x < limits_down).any() or (x > limits_up).any():
+                if (x < limits_down).any() or (x > limits_up).any() or not space_block.if_in(x):
                     continue
                 viable_points.append(x)
 
@@ -87,12 +91,20 @@ def find_vertex_route(space, starting_point, ending_point):
                 if point_viable:
                     G.add_edge(point1, point2, weight=np.linalg.norm(np.array(point2) - np.array(point1)))
                     points_to_check.append(point2)
-        shortest_path = nx.shortest_path(G, source=starting_point, target=ending_point, weight="weight")
-        edges_in_path = list(zip(shortest_path[:-1], shortest_path[1:]))
-        path = {"path": shortest_path, "length": sum([G.edges[edge]["weight"] for edge in edges_in_path])}
-        if path["length"] < best_path["length"]:
-            best_path = path
+        try:
+            shortest_path = nx.shortest_path(G, source=starting_point, target=ending_point, weight="weight")
+            edges_in_path = list(zip(shortest_path[:-1], shortest_path[1:]))
+            path = {"path": shortest_path, "length": sum([G.edges[edge]["weight"] for edge in edges_in_path])}
+            if path["length"] < best_path["length"]:
+                best_path = path
+        except Exception:
+            pass
+    if best_path == {"path": None, "length": np.inf}:
+        print("Nie znaleziono ścieżki")
+        return None
+
     # PLOTOWANIE TESTOWE
+
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(projection='3d')
     for block_object in space[spaceEnum.OBJECTS]:
@@ -104,7 +116,17 @@ def find_vertex_route(space, starting_point, ending_point):
                 edgecolors='black',
                 linewidths=1)
     ax.plot(path_points[:, 0], path_points[:, 1], path_points[:, 2])
-    plt.draw()
+    P1 = space_block.nodes[0]["pos"]
+    P2 = space_block.nodes[7]["pos"]
+    ax.set_xlim(P1[0], P2[0])
+    ax.set_ylim(P1[1], P2[1])
+    ax.set_zlim(P1[2], P2[2])
+
+    ax.set_box_aspect([
+        P2[0] - P1[0],
+        P2[1] - P1[1],
+        P2[2] - P1[2]
+    ])
     plt.show()
     return best_path
 

@@ -93,10 +93,13 @@ class Shape3D(nx.Graph):
             fig = plt.figure(figsize=(8, 6))
         if ax is None:
             ax = fig.add_subplot(projection='3d')
+
         verts = []
-        for side, plane_eq in self.sides:
-            verts_i = [self.nodes[side[i]]["pos"] for i in range(len(side))]
+
+        for side, _ in self.sides:
+            verts_i = [self.nodes[i]["pos"] for i in side]
             verts.append(verts_i)
+
         poly = Poly3DCollection(
             verts,
             facecolor="cyan",
@@ -104,7 +107,7 @@ class Shape3D(nx.Graph):
             alpha=0.1
         )
         ax.add_collection3d(poly)
-        ax.set_box_aspect([1, 1, 1])
+
         return fig, ax
 
 
