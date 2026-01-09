@@ -104,7 +104,7 @@ class Shape3D(nx.Graph):
             alpha=0.1
         )
         ax.add_collection3d(poly)
-        ax.set_aspect('equal', adjustable='box')
+        ax.set_box_aspect([1, 1, 1])
         return fig, ax
 
 
@@ -143,3 +143,11 @@ class Block(Shape3D):
                  (5, 7),
                  (6, 7)]
         super().__init__(nodes, edges)
+
+    def if_in(self, point):
+        if not isinstance(point, np.ndarray):
+            point = np.array(point)
+        P1 = np.array(self.nodes[0]["pos"])
+        P2 = np.array(self.nodes[7]["pos"])
+        return (point > P1).all() and (point < P2).all()
+
